@@ -1,4 +1,9 @@
+import cache from 'memory-cache';
+import { EJSON } from 'meteor/ejson';
+import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
+import { ValidationError } from 'meteor/mdg:validation-error';
+
 
 export class ValidatedMethod {
   constructor(options) {
@@ -25,8 +30,9 @@ export class ValidatedMethod {
       validate: Function,
       run: Function,
       mixins: [Function],
+      cacheTTL: Match.Maybe(Number),
       connection: Object,
-      applyOptions: Object,
+      applyOptions: Object
     }));
 
     // Default options passed to Meteor.apply, can be overridden with applyOptions
@@ -36,7 +42,7 @@ export class ValidatedMethod {
 
       // Don't call the server method if the client stub throws an error, so that we don't end
       // up doing validations twice
-      throwStubExceptions: true,
+      throwStubExceptions: true
     };
 
     options.applyOptions = {
@@ -84,16 +90,35 @@ export class ValidatedMethod {
     // Add `this.name` to reference the Method name
     methodInvocation.name = this.name;
 
-    const validateResult = this.validate.bind(methodInvocation)(args);
+    try {
+      const validateResult = this.validate.bind(methodInvocation)(args);
 
-    if (typeof validateResult !== 'undefined') {
-      throw new Error(`Returning from validate doesn't do anything; \
-perhaps you meant to throw an error?`);
+      if (typeof validateResult !== 'undefined') {
+        throw new Error('Returning from validate doesn\'t do anything; perhaps you meant to throw an error?');
+      }
+    } catch (error) {
+      throw new ValidationError(error.details);
+    }
+
+    // TODO: We should add an option to use redis for cache
+    if (this.cacheTTL) {
+      const cacheName = `${this.name}:${EJSON.stringify(args)}`;
+      const cachedData = cache.get(cacheName);
+
+      if (cachedData) {
+        return cachedData;
+      }
+
+      const result = this.run.bind(methodInvocation)(args);
+
+      cache.put(`${this.name}:${EJSON.stringify(args)}`, result, this.cacheTTL);
+
+      return result;
     }
 
     return this.run.bind(methodInvocation)(args);
   }
-};
+}
 
 // Mixins get a chance to transform the arguments before they are passed to the actual Method
 function applyMixins(args, mixins) {
@@ -103,11 +128,11 @@ function applyMixins(args, mixins) {
   mixins.forEach((mixin) => {
     args = mixin(args);
 
-    if(!Match.test(args, Object)) {
+    if (!Match.test(args, Object)) {
       const functionName = mixin.toString().match(/function\s(\w+)/);
       let msg = 'One of the mixins';
 
-      if(functionName) {
+      if (functionName) {
         msg = `The function '${functionName[1]}'`;
       }
 

@@ -1,17 +1,19 @@
 Package.describe({
-  name: 'mdg:validated-method',
+  name: 'indesign:validated-method',
   summary: 'A simple wrapper for Meteor.methods',
-  version: '1.2.0',
-  documentation: 'README.md',
+  version: '1.0.0',
+  documentation: 'README.md'
 });
 
 Package.onUse(function (api) {
   api.versionsFrom('1.7');
 
   api.use([
+    'mdg:validation-error',
     'ecmascript',
+    'ejson',
     'check',
-    'ddp',
+    'ddp'
   ]);
 
   api.mainModule('validated-method.js');
@@ -29,4 +31,8 @@ Package.onTest(function (api) {
   ]);
 
   api.mainModule('validated-method-tests.js');
+});
+
+Npm.depends({
+  'memory-cache': "0.2.0"
 });
