@@ -9,7 +9,7 @@ Package.onUse(function (api) {
   api.versionsFrom('1.7');
 
   api.use([
-    'mdg:validation-error',
+    'mdg:validation-error@0.5.1',
     'ecmascript',
     'ejson',
     'check',
@@ -26,7 +26,7 @@ Package.onTest(function (api) {
     'practicalmeteor:mocha@2.4.5_6',
     'practicalmeteor:chai@2.1.0_1',
     'aldeed:simple-schema@1.5.4',
-    'mdg:validated-method',
+    'indesign:validated-method',
     'random'
   ]);
 
