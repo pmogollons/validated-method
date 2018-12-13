@@ -1,6 +1,8 @@
-# mdg:validated-method
+# indesign:validated-method
 
-### Define Meteor methods in a structured way, with mixins
+This is a fork of mdg:validated-method that adds cache and improves validation error handling with SimpleSchema from npm.
+
+### Define Meteor methods in a structured way, with mixins & caching
 
 ```js
 // Method definition
@@ -8,6 +10,7 @@ const method = new ValidatedMethod({
   name, // DDP method name
   mixins, // Method extensions
   validate, // argument validation
+  cacheTTL, // Cache the response for n ms
   applyOptions, // options passed to Meteor.apply
   run // Method body
 });
@@ -34,6 +37,7 @@ waste server-side resources.
 1. Get the return value of the stub by default, to take advantage of [consistent ID generation](#id-generation-and-returnstubvalue). This
 way you can implement a custom insert method with optimistic UI.
 1. Install Method extensions via mixins.
+1. Add cache to your methods to reduce stress on the server
 
 See extensive code samples in the [Todos example app](https://github.com/meteor/todos).
 
@@ -49,6 +53,10 @@ export const makePrivate = new ValidatedMethod({
   // The name of the method, sent over the wire. Same as the key provided
   // when calling Meteor.methods
   name: 'Lists.methods.makePrivate',
+  
+  // The time that the response of this method should be cached in ms
+  // If falsy will not be cached
+  cacheTTL: 1000,
 
   // Validation function for the arguments. Only keyword arguments are accepted,
   // so the arguments are an object rather than an array. The SimpleSchema validator
@@ -92,7 +100,7 @@ export const makePrivate = new ValidatedMethod({
 });
 ```
 
-The `validator` function called in the example requires SimpleSchema version 1.4+.
+The `validator` function called in the example requires SimpleSchema version 1.4+ or simpl-schema from npm.
 
 Be aware that by default the `validator` function does not [clean](https://github.com/aldeed/meteor-simple-schema#cleaning-data)
 the method parameters before checking them. This behavior differs from that of
@@ -335,6 +343,9 @@ const listId = insert.call((err) => {
 
 FlowRouter.go('listsShow', { _id: listId });
 ```
+
+### TODO
+* Allow to cache using redis, this will allow to share the cache between different instances of the same app
 
 ### Running tests
 

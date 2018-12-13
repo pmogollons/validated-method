@@ -67,7 +67,7 @@ export class ValidatedMethod {
 
   call(args, callback) {
     // Accept calling with just a callback
-    if ( typeof args === 'function' ) {
+    if (typeof args === 'function') {
       callback = args;
       args = {};
     }
