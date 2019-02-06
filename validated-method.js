@@ -72,17 +72,24 @@ export class ValidatedMethod {
       args = {};
     }
 
+    // If user didnt sent a callback return a promise
+    if (!callback) {
+      return new Promise((resolve, reject) => {
+        this.connection.apply(this.name, [args], this.applyOptions, (error, response) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+    }
+
     try {
       return this.connection.apply(this.name, [args], this.applyOptions, callback);
     } catch (err) {
-      if (callback) {
-        // Get errors from the stub in the same way as from the server-side method
-        callback(err);
-      } else {
-        // No callback passed, throw instead of silently failing; this is what
-        // "normal" Methods do if you don't pass a callback.
-        throw err;
-      }
+      // Get errors from the stub in the same way as from the server-side method
+      callback(err);
     }
   }
 
